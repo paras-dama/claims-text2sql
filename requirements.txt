@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+sqlalchemy
+psycopg[binary]
+litellm
+instructor
+sqlglot
+python-dotenv
+faker
+pytest
