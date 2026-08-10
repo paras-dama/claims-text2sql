@@ -16,13 +16,17 @@ Work in progress - early scaffold stage.
 ## Local setup
 See `SETUP.md` for full environment setup instructions.
 
-\`\`\`powershell
+```powershell
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 copy .env.example .env
-# fill in .env with your DB password and API keys
+```
+
+Fill in `.env` with your DB password and API keys, then run:
+
+```powershell
 uvicorn app.main:app --reload
-\`\`\`
+```
 
 Visit http://127.0.0.1:8000/health
