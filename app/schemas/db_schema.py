@@ -10,6 +10,7 @@ class ColumnInfo(BaseModel):
     references_table: str | None = None
     references_column: str | None = None
     column_comment: str | None = None
+    sample_values: list[str] = []
 
 
 class TableInfo(BaseModel):
@@ -19,7 +20,9 @@ class TableInfo(BaseModel):
     def to_prompt_string(self) -> str:
         """
         Renders this table as a compact string suitable for an LLM prompt.
-        Deliberately terse — column name, type, and any FK/PK markers only.
+        Deliberately terse — column name, type, FK/PK markers, and a few
+        real sample values where available (this is what prevents the
+        LLM from guessing wrong casing/format for enum-like columns).
         """
         lines = [f"TABLE {self.table_name} ("]
         for col in self.columns:
@@ -32,7 +35,11 @@ class TableInfo(BaseModel):
                 markers.append("NOT NULL")
             marker_str = f"  [{', '.join(markers)}]" if markers else ""
             comment_str = f"  -- {col.column_comment}" if col.column_comment else ""
-            lines.append(f"  {col.name} {col.data_type}{marker_str}{comment_str}")
+            sample_str = ""
+            if col.sample_values:
+                values_preview = ", ".join(f"'{v}'" for v in col.sample_values)
+                sample_str = f"  (examples: {values_preview})"
+            lines.append(f"  {col.name} {col.data_type}{marker_str}{comment_str}{sample_str}")
         lines.append(")")
         return "\n".join(lines)
 
