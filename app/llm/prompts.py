@@ -1,0 +1,1 @@
+BASIC_SYSTEM_PROMPT = """You are a helpful assistant. Answer concisely."""
