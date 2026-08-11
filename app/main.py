@@ -5,6 +5,7 @@ from app.config import settings
 from app.db.introspect import introspect_schema
 from app.llm.router import get_completion
 from app.llm.prompts import BASIC_SYSTEM_PROMPT
+from app.orchestrator.pipeline import run_pipeline
 
 app = FastAPI(title = "Claim Text To SQL API")
 
@@ -36,3 +37,12 @@ def llm_test(request: PromptRequest):
         provider=request.provider,
     )
     return {"response": response}
+
+class QueryRequest(BaseModel):
+    question: str
+    provider: str | None = None
+
+
+@app.post("/query")
+def query(request: QueryRequest):
+    return run_pipeline(request.question, provider=request.provider)
