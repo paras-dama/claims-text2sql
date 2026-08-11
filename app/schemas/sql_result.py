@@ -4,9 +4,6 @@ from pydantic import BaseModel, Field
 
 
 class Assumption(BaseModel):
-    """
-    One specific interpretation choice the LLM made (or is asking about).
-    """
     ambiguity_type: Literal[
         "metric_definition",
         "status_filter",
@@ -23,15 +20,21 @@ class Assumption(BaseModel):
     confidence: float = Field(ge=0, le=1)
 
 
+class ClarifyingQuestion(BaseModel):
+    question: str = Field(description="The question to show the user")
+    options: list[str] = Field(
+        default_factory=list,
+        description="Short, concrete answer choices, e.g. specific interpretations",
+    )
+
+
 class SQLGenerationResult(BaseModel):
     status: Literal["ready", "needs_clarification"]
-    sql: str | None = Field(
-        default=None,
-        description="Generated SQL. Present only if status is 'ready'.",
-    )
+    sql: str | None = Field(default=None)
     reasoning: str = Field(description="Brief explanation of the approach taken")
-    assumptions: list[Assumption] = Field(
-        default_factory=list,
-        description="Any interpretation choices made, even if status is 'ready'",
-    )
+    assumptions: list[Assumption] = Field(default_factory=list)
     overall_confidence: float = Field(ge=0, le=1)
+    clarifying_question: ClarifyingQuestion | None = Field(
+        default=None,
+        description="Present only when status is 'needs_clarification'",
+    )
