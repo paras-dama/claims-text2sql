@@ -1,11 +1,6 @@
 import sqlglot
 from sqlglot import exp
 
-# Must match ALLOWED_TABLES in app/db/introspect.py — this is intentional
-# duplication for now (two places listing the same tables). We'll note
-# this as a small piece of tech debt to revisit if the project grows.
-ALLOWED_TABLES = {"claims", "claim_reserves"}
-
 MAX_ROWS_LIMIT = 200
 
 
@@ -44,15 +39,18 @@ def validate_and_prepare_sql(sql: str) -> str:
         )
 
     # Check every table referenced anywhere in the query (including
-    # subqueries and CTEs) against our allowlist.
+    # subqueries and CTEs) against tables that currently exist in the
+    # database, minus the denylist. Queried fresh each call so newly
+    # added tables are recognized immediately, without a restart.
     referenced_tables = {
         table.name.lower() for table in statement.find_all(exp.Table)
     }
-    disallowed = referenced_tables - ALLOWED_TABLES
+    allowed_tables = set(get_allowed_tables())
+    disallowed = referenced_tables - allowed_tables
     if disallowed:
         raise SQLValidationError(
             f"Query references disallowed table(s): {disallowed}. "
-            f"Allowed tables: {ALLOWED_TABLES}"
+            f"Allowed tables: {allowed_tables}"
         )
 
     # Reject any data-modifying subquery constructs sqlglot might parse
