@@ -2,8 +2,7 @@ import psycopg
 
 from app.config import settings
 from app.schemas.db_schema import ColumnInfo, SchemaInfo, TableInfo
-
-ALLOWED_TABLES = ["claims", "claim_reserves"]
+from app.domain_tables import get_allowed_tables
 
 # Only fetch sample values for columns whose type suggests they're
 # categorical/enum-like. Sampling a BIGINT PK or a TIMESTAMP wastes a
@@ -119,10 +118,12 @@ def introspect_table(cur, table_name: str) -> TableInfo:
 
 
 def introspect_schema() -> SchemaInfo:
+    allowed_tables = get_allowed_tables()
+
     conn = psycopg.connect(settings.database_url)
     cur = conn.cursor()
 
-    tables = [introspect_table(cur, name) for name in ALLOWED_TABLES]
+    tables = [introspect_table(cur, name) for name in allowed_tables]
 
     cur.close()
     conn.close()
