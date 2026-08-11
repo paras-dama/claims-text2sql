@@ -1,7 +1,5 @@
 from app.llm.ambiguity_taxonomy import build_few_shot_block
 
-BASIC_SYSTEM_PROMPT = """You are a helpful assistant. Answer concisely."""
-
 SQL_GENERATION_SYSTEM_PROMPT = """You are a SQL generation assistant for an insurance claims database.
 
 You will be given a database schema and a natural language question.
@@ -25,13 +23,15 @@ For ANY question, evaluate whether it matches one of these ambiguity
 patterns (or a similar one not listed). If it does:
 - Set status to "needs_clarification"
 - Leave sql as null
-- Describe the ambiguity in the assumptions list, including both candidate interpretations, with confidence reflecting how uncertain you are
+- Describe the ambiguity in the assumptions list, including both candidate interpretations
+- Provide a clarifying_question with a short, specific question and 2-4 concrete options (e.g. the actual candidate SQL interpretations phrased in plain English, not generic options like "yes/no")
 
 If the question is clear and unambiguous (or if you have strong contextual
 reason to prefer one interpretation), you may proceed:
 - Set status to "ready"
 - Provide the sql
-- Still list any assumptions you made in the assumptions list, even minor ones, with their confidence
+- Still list any assumptions you made, even minor ones
+- Leave clarifying_question as null
 
 Respond as a JSON object matching this exact structure:
 {{
@@ -46,18 +46,36 @@ Respond as a JSON object matching this exact structure:
       "confidence": <float 0-1>
     }}
   ],
-  "overall_confidence": <float 0-1>
+  "overall_confidence": <float 0-1>,
+  "clarifying_question": {{
+    "question": "<specific question text>",
+    "options": ["<option 1>", "<option 2>"]
+  }} | null
 }}
 
 Do not include any text outside the JSON object. No markdown code fences, no preamble.
 """.format(few_shot_examples=build_few_shot_block())
 
 
-def build_sql_generation_prompt(schema_text: str, question: str) -> str:
+def build_sql_generation_prompt(
+    schema_text: str,
+    question: str,
+    clarification_context: str | None = None,
+) -> str:
+    """
+    clarification_context: if this is a follow-up call after the user
+    answered a clarifying question, this contains the original question,
+    the question that was asked, and the user's chosen answer — so the
+    LLM can now generate final SQL with the ambiguity resolved.
+    """
+    context_block = ""
+    if clarification_context:
+        context_block = f"\n\nCLARIFICATION CONTEXT (the user already answered a follow-up question — use this to resolve the ambiguity and proceed with status \"ready\"):\n{clarification_context}"
+
     return f"""SCHEMA:
 {schema_text}
 
 QUESTION:
-{question}
+{question}{context_block}
 
 Respond with only the JSON object described in the system prompt."""
