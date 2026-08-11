@@ -3,10 +3,14 @@ import psycopg
 from app.config import settings
 from app.schemas.db_schema import ColumnInfo, SchemaInfo, TableInfo
 
-# Only introspect tables we actually want the LLM to know about.
-# This is an intentional allowlist — it's also your first real
-# guardrail: the LLM will never even see tables outside this list.
 ALLOWED_TABLES = ["claims", "claim_reserves"]
+
+# Only fetch sample values for columns whose type suggests they're
+# categorical/enum-like. Sampling a BIGINT PK or a TIMESTAMP wastes a
+# query and adds no useful signal.
+SAMPLEABLE_TYPES = {"character varying", "text", "character"}
+
+MAX_SAMPLE_VALUES = 5
 
 
 def get_primary_keys(cur, table_name: str) -> set[str]:
@@ -24,7 +28,6 @@ def get_primary_keys(cur, table_name: str) -> set[str]:
 
 
 def get_foreign_keys(cur, table_name: str) -> dict[str, tuple[str, str]]:
-    """Returns {column_name: (referenced_table, referenced_column)}"""
     cur.execute(
         """
         SELECT
@@ -59,6 +62,22 @@ def get_column_comments(cur, table_name: str) -> dict[str, str]:
     return {row[0]: row[1] for row in cur.fetchall() if row[1]}
 
 
+def get_sample_values(cur, table_name: str, column_name: str) -> list[str]:
+    """
+    Returns up to MAX_SAMPLE_VALUES distinct real values from this
+    column. This is what prevents the LLM from guessing casing/format
+    for status/code-like columns instead of matching real stored data.
+    """
+    query = f"""
+        SELECT DISTINCT {column_name}
+        FROM {table_name}
+        WHERE {column_name} IS NOT NULL
+        LIMIT {MAX_SAMPLE_VALUES}
+    """
+    cur.execute(query)
+    return [str(row[0]) for row in cur.fetchall()]
+
+
 def introspect_table(cur, table_name: str) -> TableInfo:
     primary_keys = get_primary_keys(cur, table_name)
     foreign_keys = get_foreign_keys(cur, table_name)
@@ -77,6 +96,11 @@ def introspect_table(cur, table_name: str) -> TableInfo:
     columns = []
     for col_name, data_type, is_nullable in cur.fetchall():
         fk_target = foreign_keys.get(col_name)
+
+        sample_values = []
+        if data_type in SAMPLEABLE_TYPES and col_name not in primary_keys:
+            sample_values = get_sample_values(cur, table_name, col_name)
+
         columns.append(
             ColumnInfo(
                 name=col_name,
@@ -87,6 +111,7 @@ def introspect_table(cur, table_name: str) -> TableInfo:
                 references_table=fk_target[0] if fk_target else None,
                 references_column=fk_target[1] if fk_target else None,
                 column_comment=comments.get(col_name),
+                sample_values=sample_values,
             )
         )
 
