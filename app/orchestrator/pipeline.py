@@ -19,8 +19,6 @@ def generate_sql(question: str, provider: str | None = None) -> SQLGenerationRes
         provider=provider,
     )
 
-    # The LLM is instructed to return only JSON, but models sometimes
-    # wrap it in markdown fences anyway. Strip those defensively.
     cleaned = raw_response.strip()
     if cleaned.startswith("```"):
         cleaned = cleaned.strip("`")
@@ -34,19 +32,31 @@ def generate_sql(question: str, provider: str | None = None) -> SQLGenerationRes
 
 def run_pipeline(question: str, provider: str | None = None) -> dict:
     """
-    Full pipeline: question -> SQL -> execution -> results.
-    NOTE: no SQL safety validation yet (Step 6). Only call this with
-    trusted/test questions until guardrails are added.
+    Full pipeline: question -> ambiguity check -> SQL (if ready) -> execution.
+    If status is "needs_clarification", no SQL is executed — this just
+    surfaces the ambiguity for now. Step 8 adds the actual clarification
+    dialogue loop on top of this.
     """
     generation_result = generate_sql(question, provider=provider)
-    execution_result = execute_query(generation_result.sql)
 
-    return {
+    response = {
         "question": question,
-        "generated_sql": generation_result.sql,
+        "status": generation_result.status,
         "reasoning": generation_result.reasoning,
+        "assumptions": [a.model_dump() for a in generation_result.assumptions],
+        "overall_confidence": generation_result.overall_confidence,
+    }
+
+    if generation_result.status == "needs_clarification":
+        response["generated_sql"] = None
+        return response
+
+    execution_result = execute_query(generation_result.sql)
+    response.update({
+        "generated_sql": generation_result.sql,
         "columns": execution_result["columns"],
         "rows": execution_result["rows"],
         "row_count": execution_result["row_count"],
         "truncated": execution_result["truncated"],
-    }
+    })
+    return response
