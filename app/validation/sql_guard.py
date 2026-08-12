@@ -1,6 +1,8 @@
 import sqlglot
 from sqlglot import exp
 
+from app.domain_tables import get_allowed_tables
+
 MAX_ROWS_LIMIT = 200
 
 
