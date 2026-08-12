@@ -1,0 +1,66 @@
+[
+  {
+    "provider": "groq",
+    "total_questions": 6,
+    "overall_accuracy": 1.0,
+    "ambiguity_detection_recall": 1.0,
+    "clear_question_precision": 1.0,
+    "avg_elapsed_seconds": 1.78,
+    "results": [
+      {
+        "id": "amb_001",
+        "question": "What is the total paid amount for claim CLM-2024-00001?",
+        "expected_status": "needs_clarification",
+        "actual_status": "needs_clarification",
+        "correct": true,
+        "elapsed_seconds": 1.48,
+        "error": null
+      },
+      {
+        "id": "amb_002",
+        "question": "How many claims are currently open?",
+        "expected_status": "needs_clarification",
+        "actual_status": "needs_clarification",
+        "correct": true,
+        "elapsed_seconds": 0.98,
+        "error": null
+      },
+      {
+        "id": "amb_003",
+        "question": "What are the total expenses on claim CLM-2024-00050?",
+        "expected_status": "needs_clarification",
+        "actual_status": "needs_clarification",
+        "correct": true,
+        "elapsed_seconds": 1.04,
+        "error": null
+      },
+      {
+        "id": "clear_001",
+        "question": "List all claims with catastrophe_yn = 'Y'",
+        "expected_status": "ready",
+        "actual_status": "ready",
+        "correct": true,
+        "elapsed_seconds": 2.34,
+        "error": null
+      },
+      {
+        "id": "clear_002",
+        "question": "What is the claim number, insured name, and date of loss for claim_id 1?",
+        "expected_status": "ready",
+        "actual_status": "ready",
+        "correct": true,
+        "elapsed_seconds": 2.97,
+        "error": null
+      },
+      {
+        "id": "clear_003",
+        "question": "How many claims have claim_status_code exactly equal to 'open'?",
+        "expected_status": "ready",
+        "actual_status": "ready",
+        "correct": true,
+        "elapsed_seconds": 1.84,
+        "error": null
+      }
+    ]
+  }
+]

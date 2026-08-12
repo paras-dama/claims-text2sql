@@ -1,0 +1,44 @@
+[
+  {
+    "id": "amb_001",
+    "question": "What is the total paid amount for claim CLM-2024-00001?",
+    "expected_status": "needs_clarification",
+    "ambiguity_type": "metric_definition",
+    "notes": "Cached total_paid_amount vs ledger sum of Loss Payment transactions. Found in Step 5 testing."
+  },
+  {
+    "id": "amb_002",
+    "question": "How many claims are currently open?",
+    "expected_status": "needs_clarification",
+    "ambiguity_type": "status_filter",
+    "notes": "status = 'open' vs status IN ('open', 'reopened'). Found in Step 6 testing."
+  },
+  {
+    "id": "amb_003",
+    "question": "What are the total expenses on claim CLM-2024-00050?",
+    "expected_status": "needs_clarification",
+    "ambiguity_type": "category_aggregation",
+    "notes": "Claim Expense only vs Claim Expense + Legal Expense + Mitigation + LAE."
+  },
+  {
+    "id": "clear_001",
+    "question": "List all claims with catastrophe_yn = 'Y'",
+    "expected_status": "ready",
+    "ambiguity_type": null,
+    "notes": "Exact column/value match, no room for interpretation."
+  },
+  {
+    "id": "clear_002",
+    "question": "What is the claim number, insured name, and date of loss for claim_id 1?",
+    "expected_status": "ready",
+    "ambiguity_type": null,
+    "notes": "Direct lookup by primary key, fully unambiguous."
+  },
+  {
+    "id": "clear_003",
+    "question": "How many claims have claim_status_code exactly equal to 'open'?",
+    "expected_status": "ready",
+    "ambiguity_type": null,
+    "notes": "Explicitly precise phrasing should NOT trigger clarification, since the user already specified the exact interpretation."
+  }
+]
