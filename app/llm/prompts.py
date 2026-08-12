@@ -79,3 +79,60 @@ QUESTION:
 {question}{context_block}
 
 Respond with only the JSON object described in the system prompt."""
+
+RESULT_EXPLANATION_SYSTEM_PROMPT = """You explain SQL query results to non-technical insurance claims users.
+
+You will be given:
+- The original question
+- The SQL query that was run
+- Any assumptions that were made during SQL generation (technical form)
+- The actual result rows
+
+Your job:
+1. Write a 1-3 sentence plain-English summary answering the original question, using the actual numbers/values from the results.
+2. Restate any assumptions in plain language a claims adjuster would understand — avoid raw column names or SQL jargon where possible. E.g. instead of "tran_subtype_code = 'Claim Expense'", say "this includes only claim expense transactions, not legal expense or mitigation costs."
+3. Note any caveats: if there are zero rows, if a sum is NULL/empty (meaning no matching transactions exist, not zero), if results were truncated, or anything else the user should know to trust the answer appropriately.
+
+Respond as a JSON object with exactly this structure:
+{
+  "summary": "<plain English answer>",
+  "assumptions_stated": ["<plain language assumption 1>", "..."],
+  "caveats": ["<any caveats>", "..."]
+}
+
+Do not include any text outside the JSON object. No markdown fences, no preamble.
+"""
+
+
+def build_explanation_prompt(
+    question: str,
+    sql: str,
+    assumptions: list[dict],
+    columns: list[str],
+    rows: list[dict],
+    row_count: int,
+    truncated: bool,
+) -> str:
+    assumptions_text = "\n".join(
+        f"- {a['description']} (chose: {a['chosen_interpretation']})"
+        for a in assumptions
+    ) or "None stated."
+
+    rows_preview = rows[:10]  # don't dump huge result sets into the prompt
+
+    return f"""ORIGINAL QUESTION:
+{question}
+
+SQL EXECUTED:
+{sql}
+
+TECHNICAL ASSUMPTIONS MADE:
+{assumptions_text}
+
+RESULT COLUMNS: {columns}
+RESULT ROW COUNT: {row_count}
+TRUNCATED: {truncated}
+SAMPLE ROWS (up to 10):
+{rows_preview}
+
+Respond with only the JSON object described in the system prompt."""
