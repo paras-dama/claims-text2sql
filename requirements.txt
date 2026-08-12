@@ -10,3 +10,4 @@ sqlglot
 python-dotenv
 faker
 pytest
+sentence-transformers
