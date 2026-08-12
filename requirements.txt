@@ -11,3 +11,5 @@ python-dotenv
 faker
 pytest
 sentence-transformers
+streamlit
+requests
