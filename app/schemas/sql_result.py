@@ -14,8 +14,9 @@ class Assumption(BaseModel):
     description: str = Field(
         description="Plain-English description of what's ambiguous here"
     )
-    chosen_interpretation: str = Field(
-        description="The interpretation that was used (or would be used) to generate SQL"
+    chosen_interpretation: str | None = Field(
+        default=None,
+        description="The interpretation used, if status is 'ready'. Null if still ambiguous and not yet decided.",
     )
     confidence: float = Field(ge=0, le=1)
 
